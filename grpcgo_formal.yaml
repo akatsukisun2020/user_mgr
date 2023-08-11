@@ -1,0 +1,12 @@
+SystemConfig:
+  ServerConfig:
+    IP: "127.0.0.1"                 # 服务ip
+    TrpcPort: 8889                  # trpc协议端口
+    HttpPort: 8096                  # http协议端口
+  LogConfig:
+    FileName: "log/grpc_go.log"     # 日志文件
+    MaxFileSize: 100                # 最大文件长度，单位MB
+    MaxBackups: 7                   # 最大保留时长,单位天
+    LevelEnabler: -1                # 日志级别,控制输出的日志的最低级别, -1是debug日志
+
+UserConfig:

@@ -8,6 +8,7 @@ import (
 	"github.com/akatsukisun2020/go_components/logger"
 	"github.com/akatsukisun2020/go_components/redis"
 	pb "github.com/akatsukisun2020/proto_proj/user_mgr"
+	svrConf "github.com/akatsukisun2020/user_mgr/config"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -16,7 +17,10 @@ type userInfoClient struct {
 }
 
 func NewUserInfoClient() *userInfoClient {
-	opts := redis.RedisOptions{} // TODO: 调试配置信息
+	opts := redis.RedisOptions{
+		redis.WithAddrOption(svrConf.GetUserConfig().RedisAddr),
+		redis.WithPasswordOption(svrConf.GetUserConfig().RedisPasswd),
+	}
 	return &userInfoClient{
 		redisCli: redis.NewRedisKV(opts),
 	}
@@ -32,6 +36,10 @@ func (cli *userInfoClient) Get(ctx context.Context, userid string) (*pb.UserInfo
 	if err != nil {
 		logger.ErrorContextf(ctx, "userInfoClient.Get Get error, userid:%s, err:%v", userid, err)
 		return nil, err
+	}
+
+	if reply == nil { // 目标数据不存在
+		return nil, nil
 	}
 
 	bytesData, ok := reply.([]byte)

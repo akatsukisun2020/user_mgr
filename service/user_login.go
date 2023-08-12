@@ -34,12 +34,15 @@ func UserLogin(ctx context.Context, req *pb.UserLoginReq) (*pb.UserLoginRsp, err
 	}
 
 	// 更新登录信息
-	err = modifyLoginInfo(ctx, loginInfo)
+	userid := getUidFromLoginInfo(ctx, loginInfo)
+	err = modifyLoginInfo(ctx, userid, loginInfo)
 	if err != nil {
 		logger.ErrorContextf(ctx, "modifyLoginInfo error, req:%v, err:%v", req, err)
 		return rsp, err
 	}
 
+	rsp.UserId = userid  // 用户id
+	rsp.Info = loginInfo // 返回对应的信息
 	return rsp, nil
 }
 
@@ -54,9 +57,7 @@ func getUidFromLoginInfo(ctx context.Context, loginInfo *pb.LoginInfo) string {
 }
 
 // 修改登录信息
-func modifyLoginInfo(ctx context.Context, loginInfo *pb.LoginInfo) error {
-	userid := getUidFromLoginInfo(ctx, loginInfo)
-
+func modifyLoginInfo(ctx context.Context, userid string, loginInfo *pb.LoginInfo) error {
 	// redis查找
 	client := dao.NewUserInfoClient()
 	userInfo, err := client.Get(ctx, userid)

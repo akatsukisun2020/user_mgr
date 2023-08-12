@@ -52,6 +52,7 @@ func RefreshLogin(ctx context.Context, req *pb.RefreshLoginReq) (*pb.RefreshLogi
 		rsp.RetCode, rsp.RetMsg = codes.ERROR_QUERYREDIS, "查询存储失败"
 		return rsp, nil
 	}
+	userInfo.LoginInfo.PreAccessToken = userInfo.LoginInfo.AccessToken // 记录上一次的token，避免竞态.
 	userInfo.LoginInfo.AccessToken = login.EncodeToAccessToken()
 	if err = client.Set(ctx, req.GetUserId(), userInfo); err != nil {
 		logger.ErrorContextf(ctx, "RefreshLogin Set error, userid:%s, err:%v", req.GetUserId(), err)

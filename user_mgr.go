@@ -20,9 +20,9 @@ func (s *UserMgr) UserLogin(ctx context.Context, req *pb.UserLoginReq) (*pb.User
 }
 
 func (s *UserMgr) CheckLogin(ctx context.Context, req *pb.CheckLoginReq) (*pb.CheckLoginRsp, error) {
-	return nil, nil
+	return service.CheckLogin(ctx, req)
 }
 
 func (s *UserMgr) RefreshLogin(ctx context.Context, req *pb.RefreshLoginReq) (*pb.RefreshLoginRsp, error) {
-	return nil, nil
+	return service.RefreshLogin(ctx, req)
 }

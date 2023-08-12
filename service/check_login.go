@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/akatsukisun2020/go_components/logger"
 	pb "github.com/akatsukisun2020/proto_proj/user_mgr"
 	"github.com/akatsukisun2020/user_mgr/codes"
+	svrConf "github.com/akatsukisun2020/user_mgr/config"
 	"github.com/akatsukisun2020/user_mgr/dao"
 	"github.com/akatsukisun2020/user_mgr/login"
 )
@@ -20,6 +22,7 @@ func CheckLogin(ctx context.Context, req *pb.CheckLoginReq) (*pb.CheckLoginRsp, 
 	defer func() {
 		logger.DebugContextf(ctx, "CheckLogin timecost:%d, req:%v, rsp:%v",
 			time.Since(st).Milliseconds(), req, rsp)
+		debugUserInfo(ctx, req.GetUserId()) // TODO:delete
 	}()
 
 	if req.GetUserId() == "" || req.GetAccessToken() == "" {
@@ -43,7 +46,8 @@ func CheckLogin(ctx context.Context, req *pb.CheckLoginReq) (*pb.CheckLoginRsp, 
 		return rsp, nil
 	}
 
-	if req.GetAccessToken() != userInfo.GetLoginInfo().GetAccessToken() {
+	if req.GetAccessToken() != userInfo.GetLoginInfo().GetAccessToken() &&
+		req.GetAccessToken() != userInfo.GetLoginInfo().GetPreAccessToken() { // 冗余一个token
 		logger.ErrorContextf(ctx, "CheckLogin accesstoken error, userid:%s, req.accesstoken:%s, redis.accesstoken:%s",
 			req.GetUserId(), req.GetAccessToken(), userInfo.GetLoginInfo().GetAccessToken())
 		rsp.RetCode, rsp.RetMsg = codes.ERROR_TOKENCHECK, "TOKEN校验失败"
@@ -59,7 +63,10 @@ func CheckLogin(ctx context.Context, req *pb.CheckLoginReq) (*pb.CheckLoginRsp, 
 		rsp.Result = pb.ELoginResult_LoginFailForElse
 		return rsp, nil
 	}
-	if eventTime+5*60*1000 < time.Now().UnixMilli() { // TODO: 5min过期做成配置形式 ==> 重要
+	if eventTime+svrConf.GetUserConfig().LoginExpireMillSecond+ // 冗余是为了避免临界点
+		svrConf.GetUserConfig().LoginExpireRedundanceMillSecond < time.Now().UnixMilli() ||
+		// 为了避免未来时间戳
+		eventTime >= time.Now().UnixMilli()+svrConf.GetUserConfig().LoginExpireRedundanceMillSecond {
 		logger.ErrorContextf(ctx, "CheckLogin accesstoken error, accesstoken is expired, userid:%s, accesstoken:%s",
 			req.GetUserId(), req.GetAccessToken())
 		rsp.RetCode, rsp.RetMsg = codes.ERROR_TOKENEXPIRE, "TOKEN过期"
@@ -68,4 +75,10 @@ func CheckLogin(ctx context.Context, req *pb.CheckLoginReq) (*pb.CheckLoginRsp, 
 	}
 
 	return rsp, nil
+}
+
+func debugUserInfo(ctx context.Context, userid string) {
+	data, _ := dao.NewUserInfoClient().Get(ctx, userid)
+	jsondata, _ := json.Marshal(data)
+	logger.DebugContextf(ctx, "for debug, userinfo:%s", string(jsondata))
 }

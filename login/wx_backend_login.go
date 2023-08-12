@@ -10,6 +10,7 @@ import (
 
 	"github.com/akatsukisun2020/go_components/logger"
 	pb "github.com/akatsukisun2020/proto_proj/user_mgr"
+	svrConf "github.com/akatsukisun2020/user_mgr/config"
 )
 
 // 微信后台登录: https://docs.qq.com/doc/DV1JSVm5kSHNDS3lH
@@ -39,8 +40,8 @@ func (wbl *wxBackendLogin) Login(ctx context.Context, credential *pb.LoginCreden
 	}
 
 	req := &jscode2sessionReq{
-		appid:     "aaa", // TODO: 配置形式，不要让别人知道秘钥了
-		secret:    "bbb",
+		appid:     svrConf.GetUserConfig().WXLoginAppID,
+		secret:    svrConf.GetUserConfig().WXLoginSecret,
 		jsCode:    credential.GetCode(),
 		grantType: "authorization_code",
 	}

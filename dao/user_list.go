@@ -6,6 +6,7 @@ import (
 
 	"github.com/akatsukisun2020/go_components/logger"
 	"github.com/akatsukisun2020/go_components/redis"
+	svrConf "github.com/akatsukisun2020/user_mgr/config"
 )
 
 type userListClient struct {
@@ -13,7 +14,10 @@ type userListClient struct {
 }
 
 func NewUserListClient() *userListClient {
-	opts := redis.RedisOptions{} // TODO: 调试配置信息
+	opts := redis.RedisOptions{
+		redis.WithAddrOption(svrConf.GetUserConfig().RedisAddr),
+		redis.WithPasswordOption(svrConf.GetUserConfig().RedisPasswd),
+	}
 	return &userListClient{
 		redisCli: redis.NewRedisZset(opts),
 	}
